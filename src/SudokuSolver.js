@@ -5,7 +5,6 @@ import { sudokus9x9, sudokus16x16 } from './sudokus'
 export default function SudokuSolver() {
   //0 stands for empty
   const sudoku = sudokus16x16[0];
-  console.log(sudoku)
   const [sudokuObject, setSudokuObject] = useState(sudoku.map(row => {
     return row.map(tile => {
       return {
@@ -17,27 +16,20 @@ export default function SudokuSolver() {
   //check if the imported sudoku is legal
   const [legalSudoku, setLegalSudoku] = useState(true);
   useEffect(() => {
-    if(!sudokuObject)
-      return
-    for(let i = 0; i < sudokuObject.length; i++){
-      if(sudokuObject[i].value !== 0 && !isLegal(sudokuObject[i].value, i, sudokuObject, true)){ 
-        setLegalSudoku(false);
-      }
-    }
+    //add code for check legal sudoku
   }, [sudokuObject])
 
-  
-  const sudokuRowSize = sudoku.length
-  const subsectionSize = Math.sqrt(sudokuRowSize)
-  const subsectionRowSize = subsectionSize * sudokuRowSize
-  const tileSizeInPixels = 50;
+  const SUDOKU_SIZE = sudoku.length * sudoku.length //would be 81 for a 9x9 sudoku
+  const SUDOKU_ROW_SIZE = sudoku.length //would be 9 for a 9x9 sudoku
+  const SUBSECTION_ROW_SIZE = Math.sqrt(SUDOKU_ROW_SIZE) // would be 3 for a 9x9 sudoku
+  const TILE_SIZE_IN_PIXELS = 50
 
-  //return n arrays that contain numbers 1 - sudokuRowSize in an array
+  //return n arrays that contain numbers [1 through SUDOKU_ROW_SIZE] each
   let nFilledArrays = () => {
     let res = []
-    for(let i = 0; i < sudokuRowSize; i++){
+    for(let i = 0; i < SUDOKU_ROW_SIZE; i++){
       res.push([])
-      for(let j = 1; j <= sudokuRowSize; j++){
+      for(let j = 1; j <= SUDOKU_ROW_SIZE; j++){
         res[i].push(j)
       }
     }
@@ -50,52 +42,14 @@ export default function SudokuSolver() {
   let listPerSubsection = nFilledArrays()
 
 
-  const isLegalByRow = (testNum, index, sudokuObject, predetermined) => {
-    //get the row number (possible values: 0 through sudokuRowSize)
-    const rowNum = Math.floor(index / sudokuRowSize)
-    for(let i = 0; i < sudokuRowSize; i++){
-      let currIndex = i + (rowNum * sudokuRowSize)
-      if(currIndex === index && predetermined)
-        continue;
-      if(sudokuObject[currIndex].value === testNum)
-        return false
-    }
-    return true
-  }
+  const getRow = (index) => Math.floor(index / SUDOKU_ROW_SIZE)
+  const getColumn = (index) => index % SUDOKU_ROW_SIZE
+  const getSubsection = (row, column) => Math.floor(row / SUBSECTION_ROW_SIZE) * SUBSECTION_ROW_SIZE + Math.floor(column / SUBSECTION_ROW_SIZE)
+  //check if it's a legal move
+  const isLegalByRow = (row, value) => listPerRow[row].contains(value)
+  const isLegalByColumn = (column, value) => listPerColumn[column].contains(value)
+  const isLegalBySubsection = (subsection, value) => listPerSubsection[subsection].contains(value)
 
-  const isLegalByColumn = (testNum, index, sudokuObject, predetermined) => {
-    //get the column number (possible values: 0 through sudokuRowSize)
-    const columnNum = (index) % (sudokuRowSize)
-    for(let i = 0; i < sudokuRowSize; i++){
-      let currIndex = (i * sudokuRowSize) + columnNum;
-      if(currIndex === index && predetermined)
-        continue;
-      if(sudokuObject[(i * sudokuRowSize) + columnNum].value === testNum)
-        return false;
-    }
-    return true;
-  }
-
-  const isLegalBySubsection = (testNum, index, sudokuObject, predetermined) => {
-    const rowNum = Math.floor(index / sudokuRowSize)
-    const columnNum = index % sudokuRowSize 
-    //gets 'subsection indexes', for instance in a 9x9 grid there's 9 subsections (3x3) boxes
-    //this determines which box to check
-    const subsectionRow = Math.floor(rowNum / Math.sqrt(sudokuRowSize))
-    const subsectionColumn = Math.floor(columnNum / Math.sqrt(sudokuRowSize))
-    //example: box [1, 1] should check indexes: 30, 31, 32, 39, 40, 41, 48, 49, 50
-    const startingIndex = subsectionRowSize * subsectionRow + (subsectionColumn * subsectionSize)
-    for(let i = 0; i < subsectionSize; i++){
-      for(let j = 0; j < subsectionSize; j++){
-        let currIndex = (startingIndex + j) + i * sudokuRowSize;
-        if(currIndex === index && predetermined)
-          continue;
-        if(sudokuObject[currIndex].value === testNum)
-          return false
-      }
-    }
-    return true
-  }
   //check legal by subsection, row, and column
   const isLegal = (testNum, index, tempObject, predetermined) => {
     return isLegalBySubsection(testNum, index, tempObject, predetermined) && 
@@ -103,24 +57,71 @@ export default function SudokuSolver() {
   }
   
   useEffect(() => {
-    if(sudokuObject)
-      initializeArrays();
+    //if(sudokuObject)
+      //initializeArrays();
   }, [sudokuObject])
 
-  const initializeArrays = () => {
-    for(let i = 0; i < sudoku.length; i++){
-      let row = Math.floor(i / 16);
-      let column = i % 16;
-      if(sudokuObject[i].predetermined){
-        listPerRow[row].splice(listPerRow[row].indexOf(sudokuObject[i].value), 1)
-        listPerColumn[column].splice(listPerColumn[column].indexOf(sudokuObject[i].value), 1)
-
-      } 
+  /*const initializeArrays = () => {
+    for(let i = 0; i < SUDOKU_SIZE; i++){
+      let row = getRow(i)
+      let column = getColumn(i);
+      let currentTile = sudokuObject[row][column]
+      //which [3x3] square are we in? (for a 9x9 sudoku)
+      if(currentTile.predetermined){
+        let subsection = getSubsection(row, column)
+        listPerRow[row].splice(listPerColumn[column].indexOf(currentTile.value), 1)
+        listPerColumn[column].splice(listPerColumn[column].indexOf(currentTile.value), 1)
+        listPerSubsection[subsection].splice(listPerSubsection[subsection].indexOf(currentTile.value), 1)
+      }
     }
+  }*/
+  console.log(listPerColumn[0].splice(0, 5));
+  //when a tile is changed, remove that number from the arrays
+  const spliceArrays = (row, column, value) => {
+    listPerRow[row].splice(listPerRow[row].indexOf(value), 1)
+    listPerColumn[column].splice(listPerColumn[column].indexOf(value), 1)
+    let subsection = getSubsection(row, column)
+    listPerSubsection[subsection].splice(listPerSubsection[subsection].indexOf(value), 1)
+  }
+  //when a tile is changed, push the old value back
+  //receives listPerRow[row] that needs to be modified, listPerColumn[column], etc
+  const pushArrays = (legalRowNumbers, legalColumnNumbers, legalSubsectionNumbers, value) => {
+    let rowIndex = bisect(legalRowNumbers, value, 0, legalRowNumbers.length)
+    let columnIndex = bisect(legalColumnNumbers, value, 0, legalColumnNumbers.length)
+    let subsectionIndex = bisect(legalSubsectionNumbers, value, 0, legalSubsectionNumbers.length)
+    legalRowNumbers.splice(rowIndex, 0, value) //insert value at rowIndex, removing 0 elements
+    legalColumnNumbers.splice(columnIndex, 0, value)
+    legalSubsectionNumbers.splice(subsectionIndex, 0, value)
   }
 
+  const bisect = (array, value, start, end) => {
+    if(!array)
+      return 0
+    if(end - start <= 2){
+      if(array[start] === value)
+        return start
+      return end
+    }
+    let middle = Math.floor((start + end) / 2)
+    if(array[middle] === value)
+      return middle
+    if(array[middle] < value)
+      return bisect(array, value, middle, end)
+    else 
+      return bisect(array, value, start, middle)
+  }
 
-
+  const findSmallestArray = (array1, array2, array3) => {
+    let arrayOneLength = array1.length
+    let arrayTwoLength = array2.length
+    let arrayThreeLength = array3.length
+    if(arrayOneLength <= arrayTwoLength && arrayOneLength <= arrayThreeLength)
+      return array1
+    else if(arrayTwoLength <= arrayOneLength && arrayTwoLength <= arrayThreeLength)
+      return array2
+    else
+      return array3
+  }
   
   const autoSolveSudoku = () => {
     /* the algorithm: 
@@ -130,7 +131,7 @@ export default function SudokuSolver() {
         if(none of the possible numbers are legal):
           go back to previous tiles(again skip if predetermined),
           on previous tiles: 
-           start at the number that was left there and go up to sudokuRowSize
+           start at the number that was left there and go up to SUDOKU_ROW_SIZE
            once a legal number is found start going forward again
            if no legal number is found keep going backward
     */
@@ -138,22 +139,40 @@ export default function SudokuSolver() {
     let tempObject = [...sudokuObject];
     let i = 0;
     
-    while(true){
-      if(i >= tempObject.length)
+    
+    /*while(true){
+      if(i >= SUDOKU_SIZE)
         break;
-      if(tempObject[i].predetermined){
-        if(goingForward){
+      let row = getRow(i);
+      let column = getColumn(i);
+      let currentTile = tempObject[row][column]
+      if(currentTile.predetermined){
+        if(goingForward)
           i++
-          continue;
-        }
-        i--;
-        continue;
+        else
+          i--
+        continue
       }
-      for(let j = tempObject[i].value; j <= sudokuRowSize; j++){
+      let subsection = getSubsection(i)
+      let availableRowNumbers = listPerRow[row]
+      let availableColumnNumbers = listPerColumn[column]
+      let availableSubsectionNumbers = listPerSubsection[subsection]
+      console.log(availableRowNumbers, availableColumnNumbers, availableSubsectionNumbers)
+      const smallestArray = findSmallestArray(availableRowNumbers, availableColumnNumbers, availableSubsectionNumbers)
+      const secondArray = availableRowNumbers !== smallestArray ? availableRowNumbers : availableColumnNumbers
+      const thirdArray = availableColumnNumbers !== smallestArray ? availableColumnNumbers : availableSubsectionNumbers
+
+      console.log(smallestArray, secondArray, thirdArray)
+      for(let j = smallestArray[0]; j < smallestArray.length; j++){
+        //if(arr[biscect()])
+      }
+      i++
+      /*
+      for(let j = tempObject[i].value; j <= SUDOKU_ROW_SIZE; j++){
         if(j === 0){
           continue;
         }
-        if(!goingForward && tempObject[i].value === sudokuRowSize){
+        if(!goingForward && tempObject[i].value === SUDOKU_ROW_SIZE){
           tempObject[i].value = 0;
           break;
         }
@@ -162,7 +181,7 @@ export default function SudokuSolver() {
           goingForward = true;
           break;
         }
-        if(j === sudokuRowSize){
+        if(j === SUDOKU_ROW_SIZE){
           tempObject[i].value = 0;
           goingForward = false;
         }
@@ -172,17 +191,14 @@ export default function SudokuSolver() {
         i--
       else
         i++
-    }
+    }*/
     setSudokuObject(tempObject)
   }
-  
-  const pixelsOffset = (index) => index * tileSizeInPixels + Math.floor(index / subsectionSize ) * 20
-
+  const pixelsOffset = (index) => index * TILE_SIZE_IN_PIXELS + Math.floor(index / SUBSECTION_ROW_SIZE ) * 20
   return <div style={{top:'50px', left:'50px', position:'relative'}}>
     {sudokuObject.map((row, rowIndex) => {
       return row.map((tile, index) => {
         return <div className="tile" key={index} style={{top: pixelsOffset(rowIndex), left: pixelsOffset(index), color: tile.predetermined && 'blueviolet'}}>
-        {index + 1 === sudokuRowSize && <br/>}
         {tile.value !== 0 ? tile.value : " "}
       </div> 
       })
