@@ -5,7 +5,7 @@ import { sudokus9x9, sudokus16x16 } from './sudokus'
 export default function SudokuSolver() {
   //0 stands for empty
 
-  const sudoku = sudokus16x16[0];
+  const sudoku = sudokus9x9[0];
   const [sudokuObject, setSudokuObject] = useState(sudoku.map(row => {
     return row.map(tile => {
       return {
@@ -116,7 +116,7 @@ export default function SudokuSolver() {
     legalColumnNumbers.splice(columnIndex, 0, value)
     legalSubsectionNumbers.splice(subsectionIndex, 0, value)
   }
-
+  console.log(listPerRow)
   const autoSolveSudoku = () => {
     /* the algorithm: 
       iterate through each tile of the sudoku, for each tile:
@@ -135,7 +135,7 @@ export default function SudokuSolver() {
     let x = 0;
     while(true){
       x++
-      if(x >= 10000){
+      if(x >= 100){
         console.log(tempObject)
         break;
       }
@@ -155,7 +155,9 @@ export default function SudokuSolver() {
       let availableRowNumbers = listPerRow[row]
       let availableColumnNumbers = listPerColumn[column]
       let availableSubsectionNumbers = listPerSubsection[subsection]
-      for(let j = availableRowNumbers[0]; j < availableRowNumbers.length; j++){
+      for(let j = 0; j < availableRowNumbers.length; j++){
+        console.log(availableRowNumbers)
+        console.log(availableRowNumbers[j])
         let currentNumber = availableRowNumbers[j]
         if(isLegal(row, column, subsection, currentNumber)){
           if(currentTile.value !== 0)
