@@ -102,21 +102,25 @@ export default function SudokuSolver() {
 
   //when a tile is changed, remove that number from the arrays
   const spliceArrays = (row, column, subsection, value) => {
-    row.splice(row.indexOf(value), 1)
-    column.splice(column.indexOf(value), 1)
-    subsection.splice(subsection.indexOf(value), 1)
+    if(row.includes(value))
+      row.splice(row.indexOf(value), 1)
+    if(column.includes(value))
+      column.splice(column.indexOf(value), 1)
+    if(subsection.includes(value))
+      subsection.splice(subsection.indexOf(value), 1)
   }
   //when a tile is changed, push the old value back
   //receives listPerRow[row] that needs to be modified, listPerColumn[column], etc
   const pushArrays = (legalRowNumbers, legalColumnNumbers, legalSubsectionNumbers, value) => {
-    let rowIndex = bisect(legalRowNumbers, value, 0, legalRowNumbers.length)
-    let columnIndex = bisect(legalColumnNumbers, value, 0, legalColumnNumbers.length)
-    let subsectionIndex = bisect(legalSubsectionNumbers, value, 0, legalSubsectionNumbers.length)
+    console.log(legalRowNumbers, value)
+    let rowIndex = bisect(legalRowNumbers, value, 0, legalRowNumbers.length) + 1
+    let columnIndex = bisect(legalColumnNumbers, value, 0, legalColumnNumbers.length) + 1
+    let subsectionIndex = bisect(legalSubsectionNumbers, value, 0, legalSubsectionNumbers.length) + 1
     legalRowNumbers.splice(rowIndex, 0, value) //insert value at rowIndex, removing 0 elements
     legalColumnNumbers.splice(columnIndex, 0, value)
     legalSubsectionNumbers.splice(subsectionIndex, 0, value)
+    console.log(legalRowNumbers)
   }
-  console.log(listPerRow)
   const autoSolveSudoku = () => {
     /* the algorithm: 
       iterate through each tile of the sudoku, for each tile:
@@ -134,6 +138,7 @@ export default function SudokuSolver() {
     let i = 0;
     let x = 0;
     while(true){
+      console.log(i)
       x++
       if(x >= 100){
         console.log(tempObject)
@@ -144,6 +149,7 @@ export default function SudokuSolver() {
       let row = getRow(i);
       let column = getColumn(i);
       let currentTile = tempObject[row][column]
+      console.log(currentTile)
       if(currentTile.predetermined){
         if(goingForward)
           i++
@@ -155,15 +161,18 @@ export default function SudokuSolver() {
       let availableRowNumbers = listPerRow[row]
       let availableColumnNumbers = listPerColumn[column]
       let availableSubsectionNumbers = listPerSubsection[subsection]
+      //j needs to start at the index of the previous number that was in the box
       for(let j = 0; j < availableRowNumbers.length; j++){
-        console.log(availableRowNumbers)
-        console.log(availableRowNumbers[j])
         let currentNumber = availableRowNumbers[j]
         if(isLegal(row, column, subsection, currentNumber)){
-          if(currentTile.value !== 0)
+          if(currentTile.value !== 0){
+            console.log('here')
+            console.log(availableRowNumbers, availableColumnNumbers, availableSubsectionNumbers)
             pushArrays(availableRowNumbers, availableColumnNumbers, availableSubsectionNumbers, currentTile.value)
+          }
           spliceArrays(availableRowNumbers, availableColumnNumbers, availableSubsectionNumbers, currentNumber)
           tempObject[row][column].value = currentNumber
+          tempObject[row][column].index = j + 1;
           goingForward = true;
           break
         }
@@ -172,8 +181,9 @@ export default function SudokuSolver() {
           tempObject[row][column].value = 0;
         }
       }
-      if(goingForward)
+      if(goingForward){
         i++
+      }
       else
         i--
       /*
@@ -201,6 +211,7 @@ export default function SudokuSolver() {
       else
         i++*/
     }
+    console.log(tempObject)
     setSudokuObject(tempObject)
   }
 
